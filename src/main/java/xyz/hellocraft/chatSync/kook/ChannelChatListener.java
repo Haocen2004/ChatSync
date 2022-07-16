@@ -14,10 +14,10 @@ public class ChannelChatListener implements Listener {
         // Add a listener for channel messages / 添加一个监听器以侦听频道消息
         if (event.getChannel().getName().contains("服务器消息")) {
             if (event.getContent().startsWith("/")) return; // ignore command
-            ChatSync.LOGGER.info("nickname:"+event.getSender().getNickname());
-            ChatSync.LOGGER.info("name:"+event.getSender().getName());
-            ChatSync.LOGGER.info("fullname:"+event.getSender().getFullName());
-            MinecraftChatSender.getINSTANCE(null).sendMessage(event.getSender().getFullName(), event.getContent());
+            ChatSync.LOGGER.info("nickname:" + event.getSender().getNickname());
+            ChatSync.LOGGER.info("name:" + event.getSender().getName());
+            ChatSync.LOGGER.info("fullname:" + event.getSender().getFullName());
+            MinecraftChatSender.getINSTANCE(null).sendMessage(event.getSender(), event.getContent());
         }
     }
 }

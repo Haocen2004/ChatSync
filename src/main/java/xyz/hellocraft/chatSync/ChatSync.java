@@ -1,10 +1,8 @@
 package xyz.hellocraft.chatSync;
 
-import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.command.CommandSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.hellocraft.chatSync.kook.KookBot;
@@ -15,7 +13,7 @@ import xyz.hellocraft.chatSync.mc.SimpleConfig;
 public class ChatSync implements DedicatedServerModInitializer {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("chatsync");
-    public static final SimpleConfig CONFIG = SimpleConfig.of( "config" ).request();
+    public static final SimpleConfig CONFIG = SimpleConfig.getInstance();
     private KookBot bot;
 
     @Override
@@ -32,9 +30,7 @@ public class ChatSync implements DedicatedServerModInitializer {
             bot = KookBot.getINSTANCE(server);
         });
 
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            bot.getClient().close();
-        });
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> bot.getClient().close());
 
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             if(environment.dedicated) {

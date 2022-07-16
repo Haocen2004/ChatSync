@@ -14,23 +14,23 @@ import io.github.kookybot.contract.Self;
 import io.github.kookybot.contract.TextChannel;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-
+import xyz.hellocraft.chatSync.ChatSync;
 
 
 public class KookBot {
     private static KookBot INSTANCE;
-    private Client client;
-    private Self bot;
-    private MinecraftServer server;
+    private final Client client;
+    private final Self bot;
+
     public static KookBot getINSTANCE(MinecraftServer server) {
         if (INSTANCE == null) {
             INSTANCE = new KookBot(server);
         }
         return INSTANCE;
     }
+
     public static KookBot getINSTANCE() {
         if (INSTANCE == null) {
             throw new RuntimeException("Server NOT available!");
@@ -41,9 +41,9 @@ public class KookBot {
         return LiteralArgumentBuilder.literal(literal);
     }
 
+
     public KookBot(MinecraftServer server) {
-        this.server = server;
-        client = new Client("token here", configure -> {
+        client = new Client(String.valueOf(ChatSync.CONFIG.get("token")), configure -> {
             // Register default Brigadier commands / 注册默认 Brigadier 命令
             configure.withDefaultCommands();
             return null;
@@ -56,23 +56,49 @@ public class KookBot {
 
         CommandDispatcher<CommandSource> dispatcher =
                 client.getEventManager().getDispatcher();
-
         dispatcher.register(
                 (literal("bind"))
-                        .then(
-                                RequiredArgumentBuilder.argument("username", StringArgumentType.greedyString())
-                        )
-                        .executes(c -> {
-                            ServerPlayerEntity player = server.getPlayerManager().getPlayer(StringArgumentType.getString(c, "username"));;
-                            try {
-                                player.sendMessage(Text.of("[KooK] 绑定用户中,请输入/kook bind confirm来确认"), MessageType.SYSTEM);
-                                return 1;
-                            } catch (Exception e) {
-                                c.getSource().sendMessage("该玩家不在线，请检查用户名后再试");
-                                return 0;
-                            }
-                        })
+                        .then(RequiredArgumentBuilder.argument("username", (ArgumentType) (StringArgumentType.greedyString()))
+
+                                .executes(c -> {
+
+                                    CommandSource commandSource = ((CommandSource) c.getSource());
+                                    try {
+                                        ServerPlayerEntity player = server.getPlayerManager().getPlayer(StringArgumentType.getString(c, "username"));
+                                        player.sendMessage(Text.of("[KooK] 绑定用户中,请输入/kook bind confirm来确认"), MessageType.SYSTEM);
+                                        ChatSync.CONFIG.put(player.getUuidAsString(), commandSource.getUser().getId());
+                                        return 1;
+                                    } catch (IllegalArgumentException e) {
+                                        commandSource.sendMessage("输入 /bind <username> 来绑定账号");
+                                        return 1;
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                        commandSource.sendMessage("该玩家不在线或用户名错误！请检查后重试");
+                                        return 0;
+                                    }
+                                })
+                        ));
+        dispatcher.register(
+                (literal("unbind")
+                        .executes(context -> {
+                            CommandSource commandSource = context.getSource();
+                            ChatSync.CONFIG.put(commandSource.getUser().getId(), "null");
+                            commandSource.sendMessage("您已解除绑定");
+                            return 1;
+                        }))
         );
+        dispatcher.register(
+                (literal("list")
+                        .executes(context -> {
+                            StringBuilder ret = new StringBuilder("当前玩家列表：");
+                            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                                ret.append(player.getName().getString()).append("\n");
+                            }
+                            context.getSource().getChannel().sendMessage(ret + "共 " + server.getPlayerManager().getPlayerList().size() + "人", null);
+                            return 1;
+                        }))
+        );
+
         client.getEventManager().addClassListener(new ChannelChatListener());
         bot.getLogger().info("Kook Message Handle Created.");
     }
