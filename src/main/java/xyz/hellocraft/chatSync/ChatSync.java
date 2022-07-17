@@ -15,6 +15,7 @@ public class ChatSync implements DedicatedServerModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger("chatsync");
     public static final SimpleConfig CONFIG = SimpleConfig.getInstance();
     private KookBot bot;
+    public static boolean ENABLE = false;
 
     @Override
     public void onInitializeServer() {
@@ -30,10 +31,13 @@ public class ChatSync implements DedicatedServerModInitializer {
             bot = KookBot.getINSTANCE(server);
         });
 
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> bot.getClient().close());
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            if (ENABLE)
+                bot.getClient().close();
+        });
 
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
-            if(environment.dedicated) {
+            if (environment.dedicated) {
                 new KookCommand().register(dispatcher);
             }
         }));

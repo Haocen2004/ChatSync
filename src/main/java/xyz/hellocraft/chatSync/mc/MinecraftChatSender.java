@@ -39,7 +39,7 @@ public record MinecraftChatSender(MinecraftServer server) {
                         player.asMessageSender(),
                         MessageType.CHAT);
             } catch (Exception e) {
-                e.printStackTrace();
+//                e.printStackTrace();
                 server.getPlayerManager().broadcast(Text.of("[KooK]<" + sender.getName() + "> " + msg), MessageType.SYSTEM);
             }
         }

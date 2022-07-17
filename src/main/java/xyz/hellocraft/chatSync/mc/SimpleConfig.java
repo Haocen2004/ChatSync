@@ -33,6 +33,9 @@ public class SimpleConfig {
 
         try (BufferedReader reader = Files.newBufferedReader(CONFIG_FILE)) {
             configMap = GSON.fromJson(reader, Map.class);
+            if (configMap.getOrDefault("token", "none").equals("none")) {
+                put("token", "please insert your token here.");
+            }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

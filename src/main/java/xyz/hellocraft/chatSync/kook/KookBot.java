@@ -21,8 +21,8 @@ import xyz.hellocraft.chatSync.ChatSync;
 
 public class KookBot {
     private static KookBot INSTANCE;
-    private final Client client;
-    private final Self bot;
+    private Client client;
+    private Self bot;
 
     public static KookBot getINSTANCE(MinecraftServer server) {
         if (INSTANCE == null) {
@@ -43,6 +43,12 @@ public class KookBot {
 
 
     public KookBot(MinecraftServer server) {
+        String token = String.valueOf(ChatSync.CONFIG.get("token"));
+        if (token.equals("please insert your token here.") || token.equals("none")) {
+            ChatSync.LOGGER.warn("TOKEN not set,please edit ChatSync.json and insert your token.");
+            return;
+        }
+
         client = new Client(String.valueOf(ChatSync.CONFIG.get("token")), configure -> {
             // Register default Brigadier commands / 注册默认 Brigadier 命令
             configure.withDefaultCommands();
@@ -51,7 +57,7 @@ public class KookBot {
 
 
         bot = JavaBaseClass.utils.connectWebsocket(client);
-        bot.getLogger().info("Kook Bot Connected.");
+        ChatSync.LOGGER.info("Kook Bot Connected.");
         // Add a listener for channel messages / 添加一个监听器以侦听频道消息
 
         CommandDispatcher<CommandSource> dispatcher =
@@ -100,11 +106,9 @@ public class KookBot {
         );
 
         client.getEventManager().addClassListener(new ChannelChatListener());
-        bot.getLogger().info("Kook Message Handle Created.");
-    }
-
-    public Self getBot() {
-        return bot;
+        ChatSync.LOGGER.info("Kook Message Handle Created.");
+        ChatSync.ENABLE = true;
+        ChatSync.LOGGER.info("ChatSync loaded.");
     }
 
     public Client getClient() {
@@ -112,16 +116,17 @@ public class KookBot {
     }
 
     public void sendMessage(String msg) {
+        if (!ChatSync.ENABLE) return;
         new Thread(){
             @Override
             public void run() {
                 super.run();
                 for (Guild guild : bot.getGuilds()) {
-                    if(guild.getName().contains("测试")) {
+                    if (guild.getName().contains("Hellocraft")) {
                         try {
                             for (Channel channel : guild.getChannels()) {
                                 if (channel.getName().contains("服务器消息")) {
-                                    ((TextChannel)channel).sendMessage(msg,null);
+                                    ((TextChannel) channel).sendMessage(msg, null);
                                 }
                             }
                         } catch (NullPointerException e) {
